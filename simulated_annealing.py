@@ -48,7 +48,7 @@ def swap(quantity, solution):
 
 
 def generate_neighbor(quantity, solution):
-    solution_ = copy(solution)
+    solution_ = copy(solution, 'A')
     positions = choice(quantity, 2, False)
     pivot = solution_[positions[0]]
     solution_[positions[0]] = solution_[positions[1]]
@@ -69,32 +69,35 @@ def generate_neighborhood(quantity, solution, neighbors):
     return neighborhood, values
 
 
-def simulated_annealing(quantity, Flow, Distance, iterations, temperature):
-    evaluations = empty(iterations * 10)
-    fitness = empty(iterations * 10)
+def simulated_annealing(quantity, Flow, Distance, iterations, stability, temperature):
+    evaluations = empty(iterations * stability)
+    fitness = empty(iterations * stability)
     solution = arange(quantity)
     # solution = choice(quantity, quantity, False)
-    delta = .95
+    delta = .9
     boltzmann = empty(1)
     probability = empty(1)
     value_ = evaluate(quantity, Flow, Distance, solution)
     for i in range(iterations):
         # print(temperature)
-        for j in range(10):
+        for j in range(stability):
             swap(quantity, solution)
             value = evaluate(quantity, Flow, Distance, solution)
-            evaluations[(i * 10) + j] = value
+            evaluations[(i * stability) + j] = value
             error = value - value_
             if error < 0:
+                # print("yese")
                 value_ = value
                 solution_ = solution
             else:
                 boltzmann[0] = exp(-error/temperature)
+                # print(boltzmann[0])
                 probability[0] = rand()
                 if probability[0] < boltzmann[0]:
+                    # print("yese 2")
                     value_ = value
                     solution_ = solution
-            fitness[(i * 10) + j] = value_
+            fitness[(i * stability) + j] = value_
         temperature = delta * temperature
     plot(evaluations, label="evaluations")
     plot(fitness, label="fitness")
@@ -105,13 +108,14 @@ def simulated_annealing(quantity, Flow, Distance, iterations, temperature):
 
 
 quantity, Flow, Distance = read_file()
-# solution, value = simulated_annealing(quantity, Flow, Distance, 1000, 3000000)
-# print()
-# print(solution, value)
+solution, value = simulated_annealing(quantity, Flow, Distance, 1000, 30, 3000000)
+print()
+print(solution, value)
 
-solution = arange(26)
-for i in range(26):
-    neighborhood, values = generate_neighborhood(26, solution, 3)
-    index_ = argmax(values)
-    print(neighborhood[index_])
-    # solution = neighborhood[index_]
+# solution = arange(26)
+# print(solution)
+# for i in range(26):
+#     neighborhood, values = generate_neighborhood(26, solution, 3)
+#     index_ = argmax(values)
+#     print(neighborhood[index_])
+#     # solution = neighborhood[index_]
