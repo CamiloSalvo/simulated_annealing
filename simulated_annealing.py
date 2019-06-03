@@ -1,4 +1,4 @@
-from numpy import empty, arange, exp, copy, argmax
+from numpy import empty, arange, exp, copy, argmin, amax, dtype, int64
 from numpy.random import choice, rand
 from matplotlib.pyplot import plot, legend, grid, savefig
 from re import sub
@@ -10,7 +10,7 @@ def read_file():
         return
     with open(argv[1]) as file:
         quantity = int(file.readline())
-        Flow = empty([quantity, quantity])
+        Flow = empty([quantity, quantity], int64)
         file.readline()  # ERASED
         for i in range(quantity):
             line = file.readline()
@@ -19,7 +19,7 @@ def read_file():
             line = line.split(' ')
             for j in range(quantity):
                 Flow[i][j] = int(line[j])
-        Distance = empty([quantity, quantity])
+        Distance = empty([quantity, quantity], int64)
         file.readline()  # ERASED
         for i in range(quantity):
             line = file.readline()
@@ -31,7 +31,10 @@ def read_file():
     return quantity, Flow, Distance
 
 
-def evaluate(quantity, Flow, Distance, solution):
+quantity, Flow, Distance = read_file()
+
+
+def evaluate(solution):
     value = 0
     for i in range(quantity):
         for j in range(quantity):
@@ -39,83 +42,72 @@ def evaluate(quantity, Flow, Distance, solution):
     return value
 
 
-def swap(quantity, solution):
+def generate_neighbor(solution):
+    neighbor = copy(solution)
     positions = choice(quantity, 2, False)
-    pivot = solution[positions[0]]
-    solution[positions[0]] = solution[positions[1]]
-    solution[positions[1]] = pivot
-    return solution
+    pivot = neighbor[positions[0]]
+    neighbor[positions[0]] = neighbor[positions[1]]
+    neighbor[positions[1]] = pivot
+    return neighbor
 
 
-def generate_neighbor(quantity, solution):
-    solution_ = copy(solution, 'A')
-    positions = choice(quantity, 2, False)
-    pivot = solution_[positions[0]]
-    solution_[positions[0]] = solution_[positions[1]]
-    solution_[positions[1]] = pivot
-    return solution_
-
-
-def generate_neighborhood(quantity, solution, neighbors):
-    neighborhood = empty([neighbors, quantity])
-    values = empty(neighbors)
-    # print(neighborhood)
-    row = arange(quantity)
-    # print(row)
+def generate_neighborhood(solution, neighbors):
+    neighborhood = empty([neighbors, quantity], int64)
     for i in range(neighbors):
-        neighbor = generate_neighbor(quantity, solution)
+        neighbor = generate_neighbor(solution)
         neighborhood[i] = copy(neighbor)
-        values[i] = evaluate(quantity, Flow, Distance, neighbor)
-    return neighborhood, values
+    return neighborhood
 
 
-def simulated_annealing(quantity, Flow, Distance, iterations, stability, temperature):
+def local_search(solution, neighbors):
+    neighborhood = generate_neighborhood(solution, neighbors)
+    values = empty(neighbors, int64)
+    for i in range(neighbors):
+        values[i] = evaluate(neighborhood[i])
+    return neighborhood[argmin(values)], values[argmin(values)]
+
+
+def simulated_annealing(iterations, stability, temperature):
     evaluations = empty(iterations * stability)
     fitness = empty(iterations * stability)
     solution = arange(quantity)
     # solution = choice(quantity, quantity, False)
-    delta = .9
+    value = evaluate(solution)
+    delta = .99
     boltzmann = empty(1)
     probability = empty(1)
-    value_ = evaluate(quantity, Flow, Distance, solution)
     for i in range(iterations):
-        # print(temperature)
         for j in range(stability):
-            swap(quantity, solution)
-            value = evaluate(quantity, Flow, Distance, solution)
-            evaluations[(i * stability) + j] = value
-            error = value - value_
+            # print("first: ", solution)
+            solution_, value_ = local_search(solution, 5)
+            evaluations[(i * stability) + j] = value_
+            error = value_ - value
             if error < 0:
-                # print("yese")
-                value_ = value
-                solution_ = solution
+                value = value_
+                solution = solution_
             else:
                 boltzmann[0] = exp(-error/temperature)
-                # print(boltzmann[0])
                 probability[0] = rand()
                 if probability[0] < boltzmann[0]:
-                    # print("yese 2")
-                    value_ = value
-                    solution_ = solution
-            fitness[(i * stability) + j] = value_
+                    value = value_
+                    solution = solution_
+            fitness[(i * stability) + j] = value
+            # print("second: ", solution)
         temperature = delta * temperature
     plot(evaluations, label="evaluations")
     plot(fitness, label="fitness")
     grid(True)
     legend()
     savefig("test.png")
-    return solution_, value_
+    return solution, value
 
 
-quantity, Flow, Distance = read_file()
-solution, value = simulated_annealing(quantity, Flow, Distance, 1000, 30, 3000000)
+print(quantity)
+print(amax(Flow))
+print(amax(Distance))
+temperature = quantity * amax(Flow) * amax(Distance)
+print(temperature)
+
+solution, value = simulated_annealing(1000, 20, temperature)
 print()
 print(solution, value)
-
-# solution = arange(26)
-# print(solution)
-# for i in range(26):
-#     neighborhood, values = generate_neighborhood(26, solution, 3)
-#     index_ = argmax(values)
-#     print(neighborhood[index_])
-#     # solution = neighborhood[index_]
