@@ -1,14 +1,15 @@
-from numpy import empty, arange, exp, copy, argmin, amax, dtype, int64
+from time import time
+from numpy import empty, arange, exp, copy, argmin, amax, int64
 from numpy.random import choice, rand
-from matplotlib.pyplot import plot, legend, grid, savefig
+from matplotlib.pyplot import plot, boxplot, hlines, legend, grid, savefig
 from re import sub
 from sys import argv
 
 
-def read_file():
+def read_data():
     if len(argv) == 1:
         return
-    with open(argv[1]) as file:
+    with open(argv[1] + ".dat") as file:
         quantity = int(file.readline())
         Flow = empty([quantity, quantity], int64)
         file.readline()  # ERASED
@@ -31,10 +32,33 @@ def read_file():
     return quantity, Flow, Distance
 
 
-quantity, Flow, Distance = read_file()
+quantity, Flow, Distance = read_data()
+
+
+def read_solution():
+    with open(argv[1] + ".sln") as file:
+        line = file.readline()
+        line = line.strip(' \n')
+        line = sub(' +', ' ', line)
+        line = line.split(' ')
+        optimum = int(line[1])
+    return optimum
+
+
+optimum = read_solution()
+print("optimum: ", optimum)
+
+calls = 0
+
+
+def increase_calls():
+    global calls
+    calls = calls + 1
+    return None
 
 
 def evaluate(solution):
+    increase_calls()
     value = 0
     for i in range(quantity):
         for j in range(quantity):
@@ -68,19 +92,19 @@ def local_search(solution, neighbors):
 
 
 def simulated_annealing(iterations, stability, temperature):
-    evaluations = empty(iterations * stability)
+    # evaluations = empty(iterations * stability)
     fitness = empty(iterations * stability)
-    solution = arange(quantity)
-    # solution = choice(quantity, quantity, False)
+    # solution = arange(quantity)
+    solution = choice(quantity, quantity, False)
     value = evaluate(solution)
-    delta = .99
+    delta = .98
     boltzmann = empty(1)
     probability = empty(1)
+    start = time()
     for i in range(iterations):
         for j in range(stability):
-            # print("first: ", solution)
-            solution_, value_ = local_search(solution, 5)
-            evaluations[(i * stability) + j] = value_
+            solution_, value_ = local_search(solution, neighbor_quantity)
+            # evaluations[(i * stability) + j] = value_
             error = value_ - value
             if error < 0:
                 value = value_
@@ -92,22 +116,36 @@ def simulated_annealing(iterations, stability, temperature):
                     value = value_
                     solution = solution_
             fitness[(i * stability) + j] = value
-            # print("second: ", solution)
         temperature = delta * temperature
-    plot(evaluations, label="evaluations")
-    plot(fitness, label="fitness")
-    grid(True)
-    legend()
-    savefig("test.png")
-    return solution, value
+    end = time()
+    computation_time = end - start
+    # plot(evaluations, label="evaluations")
+    # plot(fitness, label="fitness")
+    # hlines(optimum, 0, iterations * stability, 'g', label="optimum")
+    # grid(True)
+    # legend()
+    # savefig("test.png", dpi=1200)
+    return solution, value, computation_time
 
 
-print(quantity)
-print(amax(Flow))
-print(amax(Distance))
-temperature = quantity * amax(Flow) * amax(Distance)
-print(temperature)
+neighbor_quantity = 5
+stability = 10
+iterations = 100000 // stability // neighbor_quantity
 
-solution, value = simulated_annealing(1000, 20, temperature)
-print()
-print(solution, value)
+
+def test(length):
+    values = empty(length)
+    computation_times = empty(length)
+    temperature = quantity * amax(Flow) * amax(Distance) * quantity
+    for i in range(length):
+        temp = temperature
+        solution, value, computation_time = simulated_annealing(iterations, stability, temp)
+        values[i] = (value - optimum) * 100 / optimum
+        computation_times[i] = computation_time
+    print(values)
+    print(computation_times)
+    boxplot(values)
+    savefig("box.png")
+
+
+test(10)
