@@ -1,7 +1,7 @@
 from time import time
-from numpy import empty, arange, exp, copy, argmin, amax, int64
+from numpy import empty, arange, exp, copy, argmin, amin, amax, int64, std, mean
 from numpy.random import choice, rand
-from matplotlib.pyplot import plot, boxplot, hlines, legend, grid, savefig
+from matplotlib.pyplot import plot, boxplot, hlines, legend, grid, savefig, title
 from re import sub
 from sys import argv
 
@@ -41,24 +41,15 @@ def read_solution():
         line = line.strip(' \n')
         line = sub(' +', ' ', line)
         line = line.split(' ')
-        optimum = int(line[1])
-    return optimum
+        known_value = int(line[1])
+    return known_value
 
 
-optimum = read_solution()
-print("optimum: ", optimum)
-
-calls = 0
-
-
-def increase_calls():
-    global calls
-    calls = calls + 1
-    return None
+known_value = read_solution()
+print("Known Value: ", known_value)
 
 
 def evaluate(solution):
-    increase_calls()
     value = 0
     for i in range(quantity):
         for j in range(quantity):
@@ -104,7 +95,6 @@ def simulated_annealing(iterations, stability, temperature):
     for i in range(iterations):
         for j in range(stability):
             solution_, value_ = local_search(solution, neighbor_quantity)
-            # evaluations[(i * stability) + j] = value_
             error = value_ - value
             if error < 0:
                 value = value_
@@ -119,33 +109,43 @@ def simulated_annealing(iterations, stability, temperature):
         temperature = delta * temperature
     end = time()
     computation_time = end - start
-    # plot(evaluations, label="evaluations")
-    # plot(fitness, label="fitness")
-    # hlines(optimum, 0, iterations * stability, 'g', label="optimum")
-    # grid(True)
-    # legend()
-    # savefig("test.png", dpi=1200)
+    # if False:
+    #     plot(fitness, label="fitness")
+    #     hlines(known_value, 0, iterations * stability, 'g', label="optimum")
+    #     grid(True)
+    #     legend()
+    #     savefig("test.png", dpi=200)
     return solution, value, computation_time
 
 
-neighbor_quantity = 5
-stability = 10
-iterations = 100000 // stability // neighbor_quantity
+neighbor_quantity = 4
+stability = 15
+iterations = 2000
+temperature = quantity * quantity * amax(Flow) * amax(Distance)
 
 
 def test(length):
-    values = empty(length)
+    # solutions = empty([length, quantity], int64)
+    values = empty(length, int64)
+    errors = empty(length)
     computation_times = empty(length)
-    temperature = quantity * amax(Flow) * amax(Distance) * quantity
     for i in range(length):
+        print("Iteracion: ", i)
         temp = temperature
         solution, value, computation_time = simulated_annealing(iterations, stability, temp)
-        values[i] = (value - optimum) * 100 / optimum
+        # solutions[i] = copy(solution)
+        print("Solution: ", solution)
+        values[i] = value
+        errors[i] = (value - known_value) * 100 / known_value
         computation_times[i] = computation_time
-    print(values)
-    print(computation_times)
-    boxplot(values)
-    savefig("box.png")
+    print("Values: ", values)
+    print("Proportional error: ", errors)
+    print("Computation Times: ", computation_times)
+
+    # boxplot(errors)
+    # grid(True)
+
+    # savefig("box.png", dpi=200)
 
 
-test(10)
+test(11)
