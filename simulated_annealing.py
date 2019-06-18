@@ -12,7 +12,7 @@ def read_data():
     with open(argv[1] + ".dat") as file:
         quantity = int(file.readline())
         Flow = empty([quantity, quantity], int64)
-        file.readline()  # ERASED
+        # file.readline()  # ERASED
         for i in range(quantity):
             line = file.readline()
             line = line.strip(' \n')
@@ -21,7 +21,7 @@ def read_data():
             for j in range(quantity):
                 Flow[i][j] = int(line[j])
         Distance = empty([quantity, quantity], int64)
-        file.readline()  # ERASED
+        # file.readline()  # ERASED
         for i in range(quantity):
             line = file.readline()
             line = line.strip(' \n')
@@ -88,7 +88,7 @@ def simulated_annealing(iterations, stability, temperature):
     # solution = arange(quantity)
     solution = choice(quantity, quantity, False)
     value = evaluate(solution)
-    delta = .98
+    delta = .99
     boltzmann = empty(1)
     probability = empty(1)
     start = time()
