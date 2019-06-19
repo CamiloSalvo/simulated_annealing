@@ -1,6 +1,6 @@
 from numpy import array, amin, argmin, std, mean
 from matplotlib.pyplot import boxplot, ylim, title, xlabel, xticks, ylabel, grid, savefig
-from scipy.stats import shapiro, friedmanchisquare
+from scipy.stats import shapiro, levene, f_oneway, friedmanchisquare
 
 
 results_1098 = array([691146345, 695845873, 637815035, 693750569, 668796908, 665861972, 659699018, 652837135, 654591478, 697274064, 666857130])
@@ -132,5 +132,10 @@ print("Shapiro 1599: ", shapiro_p_value)
 
 print()
 
-friedman_statistic, friedman_p_value = friedmanchisquare(errors_1098, errors_1099, errors_1598, errors_1599)
-print("Friedman: ", friedman_p_value)
+levene_statistic, levene_p_value = levene(errors_1098, errors_1099, errors_1598, errors_1599)
+print("Levene: ", levene_p_value)
+
+print()
+
+anova_statistic, anova_p_value = f_oneway(errors_1098, errors_1099, errors_1598, errors_1599)
+print("ANOVA: ", anova_p_value)
